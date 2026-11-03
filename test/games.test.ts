@@ -1,11 +1,11 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { assemble, resolveFiles } from '../src/assembler.ts'
-import { GameBoy } from '../src/gameboy.ts'
-import { LIBRARY, MENU, libraryAsm } from '../src/library.ts'
-import type { Cart } from '../src/library.ts'
-import type { Button } from '../src/memory.ts'
+import { assemble, resolveFiles } from '../src/assembler/assembler.ts'
+import { GameBoy } from '../src/hardware/gameboy.ts'
+import { LIBRARY, MENU, libraryAsm } from '../src/assembler/library.ts'
+import type { Cart } from '../src/assembler/library.ts'
+import type { Button } from '../src/hardware/memory.ts'
 
 const read = (path: string) => readFileSync(new URL(`../games/${path}`, import.meta.url), 'utf8')
 const carts: Cart[] = JSON.parse(read('games.json'))

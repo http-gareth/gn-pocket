@@ -1,7 +1,8 @@
-import { GameBoy } from '../src/gameboy.ts'
-import { assemble, resolveFiles } from '../src/assembler.ts'
-import { HEIGHT, WIDTH } from '../src/ppu.ts'
-import type { Button } from '../src/memory.ts'
+import { GameBoy } from '../../src/hardware/gameboy.ts'
+import { HEIGHT, WIDTH } from '../../src/hardware/ppu.ts'
+import type { Button } from '../../src/hardware/memory.ts'
+import { assemble, resolveFiles } from '../../src/assembler/assembler.ts'
+import { readGame, store, stored } from '../shared.ts'
 
 const SHADES = [[0xe0, 0xf8, 0xd0], [0x88, 0xc0, 0x70], [0x34, 0x68, 0x56], [0x08, 0x18, 0x20]]
 const FRAME_MS = 1000 / 59.7275
@@ -16,18 +17,8 @@ const canvas = document.querySelector('#screen') as HTMLCanvasElement
 const ctx = canvas.getContext('2d')!
 const image = ctx.createImageData(WIDTH, HEIGHT)
 
-const read = async (path: string) => {
-  const res = await fetch(new URL(`../games/${path}`, import.meta.url), { cache: 'no-store' })
-  if (!res.ok) throw new Error(`can't find "${path}"`)
-  return res.text()
-}
-const remember = (value?: string) => {
-  try {
-    if (value === undefined) return localStorage.getItem('studio:source')
-    localStorage.setItem('studio:source', value)
-  } catch {}
-  return null
-}
+const SOURCE_KEY = 'studio:source'
+const remember = () => store(SOURCE_KEY, code.value)
 
 let gb: GameBoy | null = null
 let carry = 0
@@ -47,10 +38,10 @@ const showLine = (line: number) => {
 }
 
 const run = async () => {
-  remember(code.value)
+  remember()
   try {
     const started = performance.now()
-    const files = await resolveFiles('studio.asm', read, { 'studio.asm': code.value })
+    const files = await resolveFiles('studio.asm', readGame, { 'studio.asm': code.value })
     const { rom } = assemble(files['studio.asm'], { files, name: 'studio.asm' })
     gb = new GameBoy(rom)
     canvas.focus()
@@ -93,8 +84,8 @@ const loop = (time: number) => {
 }
 
 const example = async () => {
-  code.value = await read('examples/hello.asm')
-  remember(code.value)
+  code.value = await readGame('examples/hello.asm')
+  remember()
 }
 
 code.addEventListener('keydown', e => {
@@ -106,7 +97,7 @@ code.addEventListener('keydown', e => {
     code.setRangeText('    ', code.selectionStart, code.selectionEnd, 'end')
   }
 })
-code.addEventListener('input', () => remember(code.value))
+code.addEventListener('input', remember)
 code.addEventListener('focus', () => { focused = false })
 canvas.tabIndex = 0
 canvas.addEventListener('focus', () => { focused = true })
@@ -122,9 +113,9 @@ for (const type of ['keydown', 'keyup'] as const) {
 }
 document.querySelector('#run')!.addEventListener('click', run)
 document.querySelector('#example')!.addEventListener('click', example)
-document.querySelector('#pocket')!.addEventListener('click', () => remember(code.value))
+document.querySelector('#pocket')!.addEventListener('click', remember)
 
-const saved = remember()
+const saved = stored(SOURCE_KEY)
 if (saved) code.value = saved
 else await example()
 requestAnimationFrame(loop)

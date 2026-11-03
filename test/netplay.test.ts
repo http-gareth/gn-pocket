@@ -1,12 +1,13 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { assemble, resolveFiles } from '../src/assembler.ts'
-import { GameBoy } from '../src/gameboy.ts'
-import { LIBRARY, libraryAsm } from '../src/library.ts'
-import type { Cart } from '../src/library.ts'
-import { Lockstep, checksum } from '../src/netplay.ts'
-import type { LinkMessage } from '../src/netplay.ts'
+import { assemble, resolveFiles } from '../src/assembler/assembler.ts'
+import { GameBoy } from '../src/hardware/gameboy.ts'
+import { LIBRARY, libraryAsm } from '../src/assembler/library.ts'
+import type { Cart } from '../src/assembler/library.ts'
+import { DELAY, Lockstep, WINDOW, checksum } from '../src/netplay/lockstep.ts'
+import { parseClientMessage, parseServerMessage } from '../src/netplay/protocol.ts'
+import type { LinkMessage } from '../src/netplay/protocol.ts'
 
 const read = (path: string) => readFileSync(new URL(`../games/${path}`, import.meta.url), 'utf8')
 const carts: Cart[] = JSON.parse(read('games.json'))
@@ -61,4 +62,37 @@ test('two linked consoles over a laggy, jittery network play the identical game'
   const first = a.history.findIndex((state, i) => i < shared && state !== b.history[i])
   assert.equal(first, -1, `identical on every one of ${shared} frames`)
   assert.ok(a.gb.mem.read(0xff80) >= 2, 'the match actually started')
+})
+
+test('link messages are checked field by field and anything else is dropped', () => {
+  assert.deepEqual(parseClientMessage('{"t":"in","f":4,"b":16,"evil":"<img src=x>"}'), { t: 'in', f: 4, b: 16 })
+  assert.deepEqual(parseClientMessage('{"t":"join","code":"abcd"}'), { t: 'join', code: 'ABCD' })
+  for (const junk of ['', 'nope', '[]', 'null', '{"t":"in","f":-1,"b":1}', '{"t":"in","f":1,"b":256}',
+    '{"t":"in","f":1.5,"b":1}', '{"t":"sum","f":"120","s":1}', '{"t":"join","code":"' + 'A'.repeat(99) + '"}', '{"t":"start","player":1}']) {
+    assert.equal(parseClientMessage(junk), null, junk)
+  }
+  assert.equal(parseServerMessage('{"t":"start","player":3}'), null)
+  assert.equal(parseServerMessage('{"t":"room","code":"<b>"}'), null)
+  assert.deepEqual(parseServerMessage('{"t":"start","player":2}'), { t: 'start', player: 2 })
+})
+
+test('the lockstep ignores button presses for frames outside its window', () => {
+  const lock = new Lockstep(1, () => {})
+  lock.receive({ t: 'in', f: DELAY, b: 7 })
+  lock.receive({ t: 'in', f: WINDOW + 1, b: 9 })
+  lock.receive({ t: 'in', f: 10 ** 12, b: 9 })
+  for (let f = 0; f < DELAY; f++) {
+    assert.deepEqual(lock.next(0), [0, 0])
+    lock.advance(() => 0)
+  }
+  assert.deepEqual(lock.next(0), [0, 7])
+  lock.advance(() => 0)
+  for (let f = DELAY + 1; f <= WINDOW; f++) {
+    lock.receive({ t: 'in', f, b: 1 })
+    assert.deepEqual(lock.next(0), [0, 1])
+    lock.advance(() => 0)
+  }
+  assert.equal(lock.next(0), null, 'the early press was dropped, not stored')
+  lock.receive({ t: 'in', f: WINDOW + 1, b: 9 })
+  assert.deepEqual(lock.next(0), [0, 9])
 })

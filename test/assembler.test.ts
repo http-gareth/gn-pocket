@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { AsmError, assemble, resolveFiles } from '../src/assembler.ts'
+import { AsmError, assemble, resolveFiles } from '../src/assembler/assembler.ts'
 
 const bytes = (source: string, length: number, at = 0) => [...assemble(source).rom.slice(at, at + length)]
 

@@ -1,7 +1,8 @@
-import { assemble, resolveFiles } from '../src/assembler.ts'
+import { assemble, resolveFiles } from '../../src/assembler/assembler.ts'
+import { LEVEL_HEIGHT as H, LEVEL_WIDTH as W, parseLevel } from '../../src/assembler/level.ts'
+import { readGame, store, stored } from '../shared.ts'
 
-const W = 128
-const H = 17
+const LEVEL_KEY = 'editor:level'
 const FIRST_TILE = 64
 const TILE_DIRT = FIRST_TILE + 1
 const TILE_GRUB = FIRST_TILE + 40
@@ -19,20 +20,7 @@ const TOOLS = [
   { ch: ' ', name: 'Eraser' }
 ]
 
-const read = async (path: string) => {
-  const res = await fetch(new URL(`../games/${path}`, import.meta.url), { cache: 'no-store' })
-  if (!res.ok) throw new Error(`can't load ${path}`)
-  return res.text()
-}
-const remember = (value?: string) => {
-  try {
-    if (value === undefined) return localStorage.getItem('editor:level')
-    localStorage.setItem('editor:level', value)
-  } catch {}
-  return null
-}
-
-const files = await resolveFiles('pip.asm', read)
+const files = await resolveFiles('pip.asm', readGame)
 const { rom, symbols } = assemble(files['pip.asm'], { files, name: 'pip.asm' })
 const tiles = rom.subarray(symbols.get('Tiles')!, symbols.get('TilesEnd')!)
 const charTile = rom.subarray(symbols.get('CharTile')!, symbols.get('CharTile')! + 128)
@@ -44,8 +32,7 @@ const original = () => {
 const map = document.querySelector('#map') as HTMLCanvasElement
 const ctx = map.getContext('2d')!
 const palette = document.querySelector('#palette') as HTMLElement
-const saved = remember()
-let grid: string[][] = saved ? (JSON.parse(saved) as string[]).map(row => row.split('')) : original()
+let grid: string[][] = parseLevel(stored(LEVEL_KEY))?.map(row => row.split('')) ?? original()
 let tool = '#'
 
 const paintTile = (target: CanvasRenderingContext2D, id: number, px: number, py: number, flip = false) => {
@@ -94,7 +81,7 @@ const drawAll = () => {
   }
 }
 
-const save = () => remember(JSON.stringify(grid.map(row => row.join(''))))
+const save = () => store(LEVEL_KEY, JSON.stringify(grid.map(row => row.join(''))))
 
 const place = (row: number, col: number) => {
   if (row < 0 || row >= H || col < 0 || col >= W) return

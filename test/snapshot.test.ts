@@ -1,9 +1,9 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { assemble, resolveFiles } from '../src/assembler.ts'
-import { GameBoy } from '../src/gameboy.ts'
-import { checksum } from '../src/netplay.ts'
+import { assemble, resolveFiles } from '../src/assembler/assembler.ts'
+import { GameBoy } from '../src/hardware/gameboy.ts'
+import { checksum } from '../src/netplay/lockstep.ts'
 
 const read = (path: string) => readFileSync(new URL(`../games/${path}`, import.meta.url), 'utf8')
 

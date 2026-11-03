@@ -1,9 +1,9 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { assemble, includesOf } from '../src/assembler.ts'
-import { GameBoy } from '../src/gameboy.ts'
-import { REG } from '../src/memory.ts'
+import { assemble, includesOf } from '../src/assembler/assembler.ts'
+import { GameBoy } from '../src/hardware/gameboy.ts'
+import { REG } from '../src/hardware/memory.ts'
 
 const files: Record<string, string> = {}
 const load = (path: string) => {

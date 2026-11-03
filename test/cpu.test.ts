@@ -1,8 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { CPU, FLAG_C, FLAG_H, FLAG_N, FLAG_Z } from '../src/cpu.ts'
-import { Memory, REG } from '../src/memory.ts'
-import { Timer } from '../src/timer.ts'
+import { CPU, FLAG_C, FLAG_H, FLAG_N, FLAG_Z } from '../src/hardware/cpu.ts'
+import { Memory, REG } from '../src/hardware/memory.ts'
+import { Timer } from '../src/hardware/timer.ts'
 
 const boot = (...bytes: number[]) => {
   const rom = new Uint8Array(0x8000)

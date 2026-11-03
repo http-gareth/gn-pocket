@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta name="referrer" content="no-referrer">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Pip Quest Level Editor</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@500;600;700;800&display=swap">
-  <link rel="stylesheet" href="tools.css">
+  <link rel="stylesheet" href="css/tools.css">
 </head>
 <body>
   <header class="bar">
@@ -26,6 +27,6 @@
     <div class="map"><canvas id="map" width="1024" height="136"></canvas></div>
     <p class="hint" id="hint">Scroll sideways to see the whole level.</p>
   </main>
-  <script type="module" src="editor.ts"></script>
+  <script type="module" src="tools/editor.ts"></script>
 </body>
 </html>

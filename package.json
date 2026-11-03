@@ -1,5 +1,5 @@
 {
-  "name": "gameboy",
+  "name": "gn-pocket",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -7,8 +7,9 @@
     "node": ">=22.13"
   },
   "scripts": {
-    "start": "node --experimental-strip-types --disable-warning=ExperimentalWarning server.ts",
+    "start": "node --experimental-strip-types --disable-warning=ExperimentalWarning server/index.ts",
     "test": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test \"test/*.test.ts\"",
-    "build": "node --experimental-strip-types --disable-warning=ExperimentalWarning build.ts"
-  }
+    "build": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/build.ts"
+  },
+  "description": "A Game Boy built from scratch: emulator, assembler and 10 original games."
 }

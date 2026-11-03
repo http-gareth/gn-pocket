@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { APU } from '../src/apu.ts'
+import { APU } from '../src/hardware/apu.ts'
 
 const RATE = 48000
 const CPU_HZ = 4194304
