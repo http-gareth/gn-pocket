@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#cfccc4">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="GN Pocket">
+  <title>GN Pocket</title>
+  <link rel="manifest" href="web/manifest.json">
+  <link rel="icon" href="web/icon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@500;600;700;800&display=swap">
+  <link rel="stylesheet" href="web/styles.css">
+</head>
+<body>
+  <main class="device" aria-label="GN Pocket handheld console">
+    <div class="bezel">
+      <div class="bezel-label"><span>GN POCKET</span><i></i><span>8-BIT</span></div>
+      <div class="power"><i class="led" id="led"></i><span>POWER</span></div>
+      <div class="screen" id="lcd">
+        <canvas id="screen" width="160" height="144"></canvas>
+        <div class="insert" id="insert">LOADING</div>
+        <div class="toast" id="toast" hidden></div>
+      </div>
+    </div>
+    <div class="brand">
+      <span>GN <em>Pocket</em></span>
+      <div class="tools">
+        <button type="button" class="pill" id="rewind" aria-label="Hold to rewind">&#9664;&#9664;<kbd>R</kbd></button>
+        <button type="button" class="pill" id="menu" aria-label="Menu">MENU</button>
+        <button type="button" class="color" id="color" aria-label="Change colors"><i></i><i></i><i></i><kbd>C</kbd></button>
+      </div>
+    </div>
+    <aside class="nerd" id="nerd" hidden aria-label="Nerd mode">
+      <header><h2>NERD MODE</h2><button type="button" id="nerd-close" aria-label="Close nerd mode">&times;</button></header>
+      <section>
+        <h3>CPU</h3>
+        <pre id="nerd-cpu"></pre>
+      </section>
+      <section>
+        <h3>GAME VARIABLES <small>$FF80&ndash;$FFFF</small></h3>
+        <pre id="nerd-ram"></pre>
+      </section>
+      <section>
+        <h3>VIDEO MEMORY <small>256 tiles</small></h3>
+        <canvas id="nerd-tiles" width="128" height="128"></canvas>
+      </section>
+    </aside>
+    <div class="pad">
+      <div class="dpad">
+        <button type="button" data-button="up" aria-label="Up"></button>
+        <button type="button" data-button="left" aria-label="Left"></button>
+        <span></span>
+        <button type="button" data-button="right" aria-label="Right"></button>
+        <button type="button" data-button="down" aria-label="Down"></button>
+        <kbd>ARROWS</kbd>
+      </div>
+      <div class="ab">
+        <button type="button" data-button="b">B<kbd>X</kbd></button>
+        <button type="button" data-button="a">A<kbd>Z</kbd></button>
+      </div>
+    </div>
+    <div class="meta">
+      <button type="button" data-button="select"><i></i>SELECT<kbd>SHIFT</kbd></button>
+      <button type="button" data-button="start"><i></i>START<kbd>ENTER</kbd></button>
+    </div>
+    <button type="button" class="speaker" id="speaker" aria-label="Sound on or off"><i></i><i></i><i></i><i></i><i></i><i></i><kbd>M</kbd></button>
+  </main>
+
+  <dialog class="sheet" id="menu-dialog">
+    <header><h2>POCKET MENU</h2><button type="button" id="menu-close" aria-label="Close">&times;</button></header>
+    <section>
+      <h3>LINK CABLE</h3>
+      <p id="link-status">Play with a friend on the same Wi-Fi.</p>
+      <div class="link-choices" id="link-choices">
+        <button type="button" id="link-host">HOST A GAME</button>
+        <form id="link-join">
+          <input id="link-input" maxlength="4" size="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CODE" aria-label="Game code">
+          <button type="submit">JOIN</button>
+        </form>
+      </div>
+      <p class="link-code" id="link-code" hidden></p>
+      <button type="button" class="quiet" id="link-unplug" hidden>CANCEL</button>
+    </section>
+    <section>
+      <h3>THIS GAME</h3>
+      <div class="row">
+        <button type="button" class="quiet" id="save">SAVE<kbd>S</kbd></button>
+        <button type="button" class="quiet" id="load">LOAD<kbd>L</kbd></button>
+        <button type="button" class="quiet" id="nerd-toggle">NERD MODE<kbd>N</kbd></button>
+      </div>
+    </section>
+    <section>
+      <h3>MAKE YOUR OWN</h3>
+      <div class="row">
+        <a class="quiet" href="web/editor.html">LEVEL EDITOR</a>
+        <a class="quiet" href="web/studio.html">GAME STUDIO</a>
+      </div>
+    </section>
+  </dialog>
+  <script type="module" src="web/main.ts"></script>
+</body>
+</html>

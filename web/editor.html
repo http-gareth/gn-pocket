@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Pip Quest Level Editor</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@500;600;700;800&display=swap">
+  <link rel="stylesheet" href="tools.css">
+</head>
+<body>
+  <header class="bar">
+    <a class="back" href="../">&larr; GN Pocket</a>
+    <h1>LEVEL EDITOR</h1>
+    <div class="actions">
+      <button type="button" class="quiet" id="clear">CLEAR</button>
+      <button type="button" class="quiet" id="reset">RESET TO 1-1</button>
+      <button type="button" id="play">PLAY IT &#9654;</button>
+    </div>
+  </header>
+  <main class="level">
+    <p class="intro">Build your own World 1-1 for Pip Quest. Pick a piece, then tap or drag on the map. Pip starts on the left and the flag waits on the right. Press PLAY to try it on the console.</p>
+    <div class="palette" id="palette" role="toolbar" aria-label="Level pieces"></div>
+    <div class="map"><canvas id="map" width="1024" height="136"></canvas></div>
+    <p class="hint" id="hint">Scroll sideways to see the whole level.</p>
+  </main>
+  <script type="module" src="editor.ts"></script>
+</body>
+</html>

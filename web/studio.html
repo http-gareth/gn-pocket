@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>GN Pocket Studio</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="tools.css">
+</head>
+<body>
+  <header class="bar">
+    <a class="back" href="../">&larr; GN Pocket</a>
+    <h1>GAME STUDIO</h1>
+    <div class="actions">
+      <button type="button" class="quiet" id="example">EXAMPLE</button>
+      <a class="quiet" href="../?play=studio" id="pocket">PLAY ON POCKET</a>
+      <button type="button" id="run">RUN &#9654;</button>
+    </div>
+  </header>
+  <main class="studio">
+    <section class="editor">
+      <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Game code"></textarea>
+      <p class="status" id="status">Press RUN (or Ctrl + Enter) to play your code.</p>
+    </section>
+    <section class="side">
+      <div class="lcd"><canvas id="screen" width="160" height="144"></canvas></div>
+      <p class="keys">Arrows move &middot; Z = A &middot; X = B &middot; Enter = Start &middot; click the screen first</p>
+      <details open>
+        <summary>Cheat sheet</summary>
+        <dl class="cheats">
+          <dt>ld a, 5</dt><dd>put 5 in register A</dd>
+          <dt>ldh [hX], a</dt><dd>store A in fast memory</dd>
+          <dt>inc [hl] / dec [hl]</dt><dd>add or take 1</dd>
+          <dt>cp 10 / jr z, .label</dt><dd>compare, then jump if equal</dd>
+          <dt>call ReadJoypad</dt><dd>fills hJoyHeld and hJoyPressed</dd>
+          <dt>bit PADB_A, b</dt><dd>is the A button down?</dd>
+          <dt>call PrintText</dt><dd>text at HL from DE</dd>
+          <dt>call PlayTone</dt><dd>sound effect at HL (SfxDing, SfxHit...)</dd>
+          <dt>dw `00333300</dt><dd>one row of pixel art (0-3)</dd>
+          <dt>$fe00</dt><dd>sprite table: Y, X, tile, flags</dd>
+        </dl>
+      </details>
+    </section>
+  </main>
+  <script type="module" src="studio.ts"></script>
+</body>
+</html>

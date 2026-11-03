@@ -1,0 +1,12 @@
+[
+  {"id": "pong", "title": "Pong", "file": "pong.asm", "blurb": "Up and down to move. Beat the CPU to 10."},
+  {"id": "snake", "title": "Snake", "file": "snake.asm", "blurb": "Eat, grow, don't hit the wall or yourself."},
+  {"id": "shootout", "title": "Shootout", "file": "shootout.asm", "blurb": "Five penalties each. Shoot with A, save with left and right."},
+  {"id": "bricks", "title": "Bricks", "file": "bricks.asm", "blurb": "Left and right to move, A to launch. Clear the wall, it gets faster."},
+  {"id": "flap", "title": "Flap", "file": "flap.asm", "blurb": "A to flap through the gaps. One touch and you're down."},
+  {"id": "blocks", "title": "Blocks", "file": "blocks.asm", "blurb": "Left and right to move, A and B to turn, Down to drop faster, Up to slam. Fill a row to clear it."},
+  {"id": "racer", "title": "Racer", "file": "racer.asm", "blurb": "Left and right to steer, Up or A for gas, Down or B to brake. Faster scores more."},
+  {"id": "invasion", "title": "Invasion", "file": "invasion.asm", "blurb": "Left and right to move, A to fire. Stop the march before it lands. Watch for the mystery ship."},
+  {"id": "pip", "title": "Pip Quest", "file": "pip.asm", "blurb": "Run with B, jump with A (hold for higher). Stomp grubs, bump ? blocks, reach the flag, beat Krag in his castle."},
+  {"id": "knockout", "title": "Knockout", "file": "knockout.asm", "blurb": "Best of three against the CPU. A punch, B kick, Down + A fireball, hold away to block, Up to jump."}
+]

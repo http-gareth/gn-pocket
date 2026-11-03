@@ -1,0 +1,61 @@
+:root {
+  --bg: #121318;
+  --panel: #1b1d24;
+  --line: #2a2d38;
+  --ink: #eceef2;
+  --muted: #8b90a0;
+  --berry: #8b1e4b;
+  --lcd: #e0f8d0;
+  --good: #7fd18b;
+  --bad: #ff7b7b;
+  --ui: "Inter", system-ui, -apple-system, sans-serif;
+  --px: "Press Start 2P", ui-monospace, monospace;
+  --code: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { min-height: 100dvh; background: var(--bg); color: var(--ink); font: 500 15px/1.5 var(--ui); -webkit-font-smoothing: antialiased; }
+button, a.quiet { font: inherit; }
+
+.bar { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 14px max(16px, env(safe-area-inset-right)) 14px max(16px, env(safe-area-inset-left)); border-bottom: 1px solid var(--line); background: rgba(18, 19, 24, .94); backdrop-filter: blur(8px); }
+.bar h1 { margin: 0; font: 13px/1.4 var(--px); color: var(--lcd); }
+.back { color: var(--muted); text-decoration: none; font-weight: 600; }
+.back:hover { color: var(--ink); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+.actions button, .actions a { display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border: 0; border-radius: 10px; background: var(--berry); color: #fbe9f0; font-weight: 700; font-size: 13px; letter-spacing: .06em; text-decoration: none; cursor: pointer; }
+.actions .quiet { background: var(--line); color: var(--ink); }
+
+.studio { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 20px; padding: 20px max(16px, env(safe-area-inset-right)) 32px max(16px, env(safe-area-inset-left)); }
+.editor { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.editor textarea { width: 100%; min-height: 70dvh; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: #0d0e12; color: #d7f5c8; font: 13px/1.6 var(--code); tab-size: 4; resize: vertical; }
+.editor textarea:focus { outline: 2px solid #3a5f4a; }
+.status { margin: 0; font: 13px/1.5 var(--code); color: var(--good); }
+.status.bad { color: var(--bad); }
+.side { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.lcd { padding: 14px; border-radius: 14px; background: #585c6b; }
+.lcd canvas { display: block; width: 100%; aspect-ratio: 160 / 144; image-rendering: pixelated; background: var(--lcd); }
+.lcd canvas:focus { outline: 3px solid var(--good); outline-offset: 3px; }
+.keys { margin: 0; color: var(--muted); font-size: 13px; }
+details { padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; }
+summary { cursor: pointer; font-weight: 700; }
+.cheats { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; margin: 12px 0 0; font-size: 13px; }
+.cheats dt { font-family: var(--code); color: #ffd23f; white-space: nowrap; }
+.cheats dd { margin: 0; color: #b8bcc8; }
+
+.level { padding: 20px max(16px, env(safe-area-inset-right)) 32px max(16px, env(safe-area-inset-left)); }
+.level .intro { max-width: 70ch; margin: 0 0 16px; color: #b8bcc8; }
+.palette { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.palette button { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px 0 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); color: var(--ink); font-weight: 600; font-size: 13px; cursor: pointer; }
+.palette button[aria-pressed="true"] { border-color: var(--good); background: #1f2b24; }
+.palette canvas { width: 24px; height: 24px; image-rendering: pixelated; border-radius: 4px; background: var(--lcd); }
+.map { overflow-x: auto; padding-bottom: 8px; border-radius: 12px; background: #0d0e12; }
+.map canvas { display: block; height: 408px; image-rendering: pixelated; touch-action: pan-x; cursor: crosshair; }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 13px; }
+
+@media (max-width: 860px) {
+  .studio { grid-template-columns: 1fr; }
+  .side { order: -1; }
+  .editor textarea { min-height: 50dvh; }
+  .map canvas { height: 306px; }
+}
