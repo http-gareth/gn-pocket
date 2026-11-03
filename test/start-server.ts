@@ -2,10 +2,10 @@ import { spawn } from 'node:child_process'
 import { request } from 'node:http'
 import type { IncomingHttpHeaders } from 'node:http'
 
-export const startServer = () => new Promise<{ port: number, stop: () => void }>((resolve, reject) => {
+export const startServer = (env: Record<string, string> = {}) => new Promise<{ port: number, stop: () => void }>((resolve, reject) => {
   const port = 5300 + Math.floor(Math.random() * 2000)
   const child = spawn(process.execPath, ['--experimental-strip-types', '--disable-warning=ExperimentalWarning', 'server/index.ts'], {
-    cwd: new URL('..', import.meta.url), env: { ...process.env, PORT: String(port) }
+    cwd: new URL('..', import.meta.url), env: { ...process.env, ...env, PORT: String(port) }
   })
   child.stdout.on('data', chunk => { if (String(chunk).includes('running')) resolve({ port, stop: () => child.kill() }) })
   child.on('error', reject)

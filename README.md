@@ -2,7 +2,7 @@
 
 **A Game Boy built from scratch: the console, the assembler that makes its cartridges, and every game on it.**
 
-[**▶ Play it in your browser**](https://http-gareth.github.io/gn-pocket/) · works on a phone, and can be added to the home screen as a full-screen app
+[**▶ Play it in your browser**](https://gn-pocket.onrender.com) · works on a phone, can be added to the home screen as a full-screen app, and two players can link up from anywhere
 
 ![GN Pocket running Knockout, with Nerd Mode showing the live CPU registers, game memory and video tiles](docs/console.png)
 
@@ -70,7 +70,6 @@ gn-pocket/
 │   ├── css/
 │   └── index.html · studio.html · editor.html
 ├── server/            index · files (static, security headers) · relay (link cable)
-├── scripts/build.ts   static build for GitHub Pages
 ├── test/              71 tests
 └── docs/              README images
 ```
@@ -80,12 +79,15 @@ gn-pocket/
 ```bash
 npm start       # http://localhost:5190, plus the link-cable server
 npm test        # 71 tests
-npm run build   # static copy in dist/, deployed to GitHub Pages on every push
 ```
 
 Node 22.13 or newer. There's nothing to install: Node strips the TypeScript itself.
 
-`npm start` also prints a Wi-Fi address. Open it on two phones to play each other: one taps **MENU → HOST A GAME**, the other types in the 4-letter code. The hosted copy plays every game, but two-player needs the link server, so it runs from `npm start`.
+To play each other, one player taps **MENU → HOST A GAME** and the other types in the 4-letter code. That works on the hosted site from anywhere, or at home: `npm start` prints a Wi-Fi address to open on both phones.
+
+## Hosting
+
+The hosted copy runs the same `npm start` server on [Render](https://render.com), set up by [`render.yaml`](render.yaml). To run your own, fork the repo and create a Render Blueprint from it. On the free plan the server sleeps after 15 minutes without visitors, so the first visit after that takes up to a minute to wake.
 
 ## Controls
 
@@ -115,4 +117,4 @@ The server, relay and pages are hardened: allowlisted files only, strict Content
 
 ---
 
-GN Pocket is an independent fan project. It isn't affiliated with or endorsed by Nintendo, and it contains no Nintendo code, BIOS or ROMs.
+[MIT licensed](LICENSE). GN Pocket is an independent fan project. It isn't affiliated with or endorsed by Nintendo, and it contains no Nintendo code, BIOS or ROMs.

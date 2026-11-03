@@ -15,20 +15,23 @@ Please report vulnerabilities privately through GitHub: open the repository's **
 - Accepts WebSocket connections only from pages on the same host.
 - Validates every message field by field and re-serialises it before passing it on, so nothing unexpected reaches the other player.
 - Requires masked, unfragmented frames of at most 256 bytes.
-- Limits each connection to 300 messages a second, each address to 10 join attempts a minute, and the server to 200 connections. Idle connections close after 10 minutes.
+- Limits each connection to 300 messages a second, each address to 10 join attempts a minute, each connection to 5 wrong codes, and the server to 200 connections. Idle connections close after 10 minutes.
 - Room codes come from a cryptographic random source.
 
 **Pages** ([`web/`](web))
 - No `innerHTML`, `eval` or inline scripts. Nerd Mode builds its text with DOM nodes.
 - Link messages from the other player are validated, and the lockstep only accepts button presses for frames inside its window, so a hostile peer can't grow memory.
 - A saved level must be exactly 17 rows of 128 plain characters before it's spliced into the cartridge source. A damaged save state rolls back instead of corrupting the running game.
-- The hosted copy carries the same Content Security Policy as a `<meta>` tag, because GitHub Pages can't send headers.
 
 **Supply chain**
 - Zero runtime and zero development dependencies.
-- GitHub Actions are pinned to full commit SHAs and kept current by Dependabot. The workflow token is read-only apart from the Pages deployment, and the checkout doesn't keep credentials.
+- GitHub Actions are pinned to full commit SHAs and kept current by Dependabot. The workflow token is read-only, and the checkout doesn't keep credentials.
 - Secret scanning and push protection are on.
 
 ## Trust model
 
-`npm start` is a local server for your own Wi-Fi. Anyone on that network can load the game and join a room if they know its code. It serves only the game's public files and holds no user data. Don't expose it to the internet without HTTPS in front of it. Saves, levels and studio code stay in your browser's local storage and are never uploaded.
+The server serves only the game's public files and holds no user data. Anyone who can reach it can load the game and join a room if they know its 4-letter code. On your own Wi-Fi that means your network; on the hosted copy it means the internet, behind Render's HTTPS.
+
+Behind a proxy, set `TRUST_PROXY=1` (the Render blueprint does). The relay then rate-limits by the visitor's address as the proxy recorded it (the last `X-Forwarded-For` entry) instead of the proxy's own, and HTTPS responses add `Strict-Transport-Security`. Don't set it when the server is reached directly, or visitors could fake their address.
+
+Saves, levels and studio code stay in your browser's local storage and are never uploaded.

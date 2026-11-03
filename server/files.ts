@@ -24,14 +24,15 @@ const POLICY: Record<string, string> = {
   'form-action': "'none'"
 }
 
-export const contentSecurityPolicy = (overrides: Record<string, string> = {}) =>
-  Object.entries({ ...POLICY, ...overrides }).map(([name, value]) => `${name} ${value}`).join('; ')
+const policy = (host: string) => Object.entries({
+  ...POLICY,
+  'connect-src': HOST.test(host) ? `'self' ws://${host} wss://${host}` : "'self'",
+  'frame-ancestors': "'none'"
+}).map(([name, value]) => `${name} ${value}`).join('; ')
 
-const securityHeaders = (host = ''): OutgoingHttpHeaders => ({
-  'content-security-policy': contentSecurityPolicy({
-    'connect-src': HOST.test(host) ? `'self' ws://${host} wss://${host}` : "'self'",
-    'frame-ancestors': "'none'"
-  }),
+const securityHeaders = (req: IncomingMessage): OutgoingHttpHeaders => ({
+  'content-security-policy': policy(req.headers.host ?? ''),
+  ...(process.env.TRUST_PROXY && req.headers['x-forwarded-proto'] === 'https' && { 'strict-transport-security': 'max-age=31536000' }),
   'x-content-type-options': 'nosniff',
   'referrer-policy': 'no-referrer',
   'x-frame-options': 'DENY',
@@ -55,7 +56,7 @@ const resolve = (url = '/') => {
 }
 
 export const serveFile = async (req: IncomingMessage, res: ServerResponse) => {
-  const headers = securityHeaders(req.headers.host)
+  const headers = securityHeaders(req)
   if (req.method !== 'GET' && req.method !== 'HEAD') return fail(res, { ...headers, allow: 'GET, HEAD' }, 405, 'method not allowed')
   let file: string | null
   try {

@@ -36,7 +36,10 @@ const palette = document.querySelector('#palette') as HTMLElement
 let grid: string[][] = parseLevel(stored(LEVEL_KEY))?.map(row => row.split('')) ?? original()
 let tool = '#'
 
+const scratch = Object.assign(document.createElement('canvas'), { width: 8, height: 8 })
+
 const paintTile = (target: CanvasRenderingContext2D, id: number, px: number, py: number, flip = false) => {
+  const sprite = id === TILE_GRUB || id === TILE_GRUB + 1
   const pixels = target.createImageData(8, 8)
   const base = (id - FIRST_TILE) * 16
   for (let y = 0; y < 8; y++) {
@@ -45,11 +48,10 @@ const paintTile = (target: CanvasRenderingContext2D, id: number, px: number, py:
       const shade = id < FIRST_TILE ? 0 : ((tiles[base + y * 2 + 1] >> bit) & 1) << 1 | ((tiles[base + y * 2] >> bit) & 1)
       const o = (y * 8 + x) * 4
       ;[pixels.data[o], pixels.data[o + 1], pixels.data[o + 2]] = SHADES[shade]
-      pixels.data[o + 3] = id >= TILE_GRUB && shade === 0 ? 0 : 255
+      pixels.data[o + 3] = sprite && shade === 0 ? 0 : 255
     }
   }
-  if (id >= TILE_GRUB) {
-    const scratch = new OffscreenCanvas(8, 8)
+  if (sprite) {
     scratch.getContext('2d')!.putImageData(pixels, 0, 0)
     target.drawImage(scratch, px, py)
   } else {

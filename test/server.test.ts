@@ -27,3 +27,17 @@ test('the dev server only serves the game, sends security headers and survives b
     server.stop()
   }
 })
+
+test('behind a proxy, HTTPS responses insist on HTTPS from then on', async () => {
+  const direct = await startServer()
+  const proxied = await startServer({ TRUST_PROXY: '1' })
+  try {
+    const https = { headers: { 'x-forwarded-proto': 'https' } }
+    assert.equal((await fetchRaw(direct.port, '/', https)).headers['strict-transport-security'], undefined, 'a direct server ignores proxy headers')
+    assert.match(String((await fetchRaw(proxied.port, '/', https)).headers['strict-transport-security']), /max-age=31536000/)
+    assert.equal((await fetchRaw(proxied.port, '/')).headers['strict-transport-security'], undefined, 'plain http gets no HSTS')
+  } finally {
+    direct.stop()
+    proxied.stop()
+  }
+})
