@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { GameBoy } from '../src/hardware/gameboy.ts'
-import { DELAY, Lockstep, WINDOW, checksum } from '../src/netplay/lockstep.ts'
+import { DELAY, FRAME_MS, Lockstep, MAX_DELAY, checksum, delayFor } from '../src/netplay/lockstep.ts'
 import { parseClientMessage, parseServerMessage } from '../src/netplay/protocol.ts'
 import type { LinkMessage } from '../src/netplay/protocol.ts'
 import { build } from './carts.ts'
@@ -63,13 +63,15 @@ test('link messages are checked field by field and anything else is dropped', ()
   }
   assert.equal(parseServerMessage('{"t":"start","player":3}'), null)
   assert.equal(parseServerMessage('{"t":"room","code":"<b>"}'), null)
-  assert.deepEqual(parseServerMessage('{"t":"start","player":2}'), { t: 'start', player: 2 })
+  assert.deepEqual(parseServerMessage('{"t":"start","player":2,"delay":12}'), { t: 'start', player: 2, delay: 12 })
+  assert.equal(parseServerMessage('{"t":"start","player":2,"delay":999}'), null)
+  assert.equal(parseServerMessage('{"t":"start","player":2}'), null)
 })
 
 test('the lockstep ignores button presses for frames outside its window', () => {
   const lock = new Lockstep(1, () => {})
   lock.receive({ t: 'in', f: DELAY, b: 7 })
-  lock.receive({ t: 'in', f: WINDOW + 1, b: 9 })
+  lock.receive({ t: 'in', f: DELAY * 2 + 1, b: 9 })
   lock.receive({ t: 'in', f: 10 ** 12, b: 9 })
   for (let f = 0; f < DELAY; f++) {
     assert.deepEqual(lock.next(0), [0, 0])
@@ -77,12 +79,35 @@ test('the lockstep ignores button presses for frames outside its window', () => 
   }
   assert.deepEqual(lock.next(0), [0, 7])
   lock.advance(() => 0)
-  for (let f = DELAY + 1; f <= WINDOW; f++) {
+  for (let f = DELAY + 1; f <= DELAY * 2; f++) {
     lock.receive({ t: 'in', f, b: 1 })
     assert.deepEqual(lock.next(0), [0, 1])
     lock.advance(() => 0)
   }
   assert.equal(lock.next(0), null, 'the early press was dropped, not stored')
-  lock.receive({ t: 'in', f: WINDOW + 1, b: 9 })
+  lock.receive({ t: 'in', f: DELAY * 2 + 1, b: 9 })
   assert.deepEqual(lock.next(0), [0, 9])
+})
+
+const linkedFrames = (latency: number, delay: number, ticks: number) => {
+  const wire: { at: number, to: number, message: LinkMessage }[] = []
+  let clock = 0
+  const locks = [1, 2].map(player => new Lockstep(player as 1 | 2, message => wire.push({ at: clock + latency, to: player === 1 ? 1 : 0, message }), delay))
+  for (clock = 0; clock < ticks; clock++) {
+    const arrived = wire.filter(item => item.at <= clock)
+    wire.splice(0, wire.length, ...wire.filter(item => item.at > clock))
+    for (const item of arrived) locks[item.to].receive(item.message)
+    for (const lock of locks) if (lock.next(0)) lock.advance(() => 0)
+  }
+  return Math.min(...locks.map(lock => lock.frame))
+}
+
+test('the link delay grows with distance so a far-away player still gets full speed', () => {
+  assert.equal(delayFor(1), DELAY, 'next door still uses the minimum')
+  assert.equal(delayFor(10 * FRAME_MS), 12)
+  assert.equal(delayFor(60_000), MAX_DELAY, 'capped')
+  const latency = 19
+  const ticks = 1200
+  assert.ok(linkedFrames(latency, DELAY, ticks) < ticks / 3, 'a fixed 4-frame delay crawls over a 320 ms link')
+  assert.ok(linkedFrames(latency, delayFor(latency * FRAME_MS), ticks) > ticks - 30, 'the adaptive delay keeps up')
 })

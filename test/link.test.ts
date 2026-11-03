@@ -33,8 +33,8 @@ test('the link cable pairs two consoles by code and relays only well-formed butt
 
     const guest = await connect(server.port)
     guest.ws.send(JSON.stringify({ t: 'join', code: room.code.toLowerCase() }))
-    assert.deepEqual(await host.next(), { t: 'start', player: 1 })
-    assert.deepEqual(await guest.next(), { t: 'start', player: 2 })
+    assert.deepEqual(await host.next(), { t: 'start', player: 1, delay: 4 })
+    assert.deepEqual(await guest.next(), { t: 'start', player: 2, delay: 4 })
 
     guest.ws.send('not json')
     guest.ws.send(JSON.stringify({ t: 'in', f: 'x', b: 1 }))

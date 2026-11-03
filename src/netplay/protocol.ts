@@ -1,6 +1,8 @@
+import { MAX_DELAY } from './lockstep.ts'
+
 export type LinkMessage = { t: 'in', f: number, b: number } | { t: 'sum', f: number, s: number }
 export type ClientMessage = { t: 'host' } | { t: 'join', code: string } | LinkMessage
-export type ServerMessage = { t: 'room', code: string } | { t: 'nope' } | { t: 'start', player: 1 | 2 } | { t: 'bye' } | LinkMessage
+export type ServerMessage = { t: 'room', code: string } | { t: 'nope' } | { t: 'start', player: 1 | 2, delay: number } | { t: 'bye' } | LinkMessage
 
 export const CODE_LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
 export const CODE_LENGTH = 4
@@ -40,9 +42,9 @@ export const parseClientMessage = (text: string): ClientMessage | null => {
 export const parseServerMessage = (text: string): ServerMessage | null => {
   const value = object(text)
   if (!value) return null
-  const { t, code, player } = value
+  const { t, code, player, delay } = value
   if (t === 'room' && typeof code === 'string' && CODE.test(code)) return { t, code }
   if (t === 'nope' || t === 'bye') return { t }
-  if (t === 'start' && (player === 1 || player === 2)) return { t, player }
+  if (t === 'start' && (player === 1 || player === 2) && isWhole(delay, MAX_DELAY) && delay > 0) return { t, player, delay }
   return linkMessage(value)
 }

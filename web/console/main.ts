@@ -6,7 +6,7 @@ import { assemble, resolveFiles } from '../../src/assembler/assembler.ts'
 import { LIBRARY, MENU, libraryAsm } from '../../src/assembler/library.ts'
 import type { Cart } from '../../src/assembler/library.ts'
 import { parseLevel, withLevel } from '../../src/assembler/level.ts'
-import { Lockstep, checksum } from '../../src/netplay/lockstep.ts'
+import { FRAME_MS, Lockstep, checksum } from '../../src/netplay/lockstep.ts'
 import { parseServerMessage } from '../../src/netplay/protocol.ts'
 import type { ClientMessage } from '../../src/netplay/protocol.ts'
 import { readGame, store, stored } from '../shared.ts'
@@ -25,7 +25,6 @@ type Link = {
   previous: number
 }
 
-const FRAME_MS = 1000 / 59.7275
 const REWIND_EVERY = 4
 const REWIND_DEPTH = 300
 const NERD_EVERY = 6
@@ -236,8 +235,9 @@ const openLink = (first: ClientMessage) => {
     } else if (message.t === 'nope') {
       showLink('No game with that code. Check it and try again.', 'choose')
     } else if (message.t === 'start') {
-      current.lock = new Lockstep(message.player, send)
-      showLink(`Linked! You are player ${message.player}.${message.player === 2 ? ' Player 1 picks the game.' : ' Pick a game.'}`, 'linked')
+      current.lock = new Lockstep(message.player, send, message.delay)
+      const lag = Math.round(message.delay * FRAME_MS)
+      showLink(`Linked! You are player ${message.player}.${message.player === 2 ? ' Player 1 picks the game.' : ' Pick a game.'} Button lag ${lag} ms.`, 'linked')
       menuButton.classList.add('on')
       const built = { menu: await build(MENU), carts: await Promise.all(carts.map(cart => build(cart.file))) }
       if (link !== current) return

@@ -2,8 +2,11 @@ import type { GameBoy } from '../hardware/gameboy.ts'
 import type { LinkMessage } from './protocol.ts'
 
 export const DELAY = 4
+export const MAX_DELAY = 30
 export const SUM_EVERY = 120
-export const WINDOW = DELAY * 2
+export const FRAME_MS = 1000 / 59.7275
+
+export const delayFor = (oneWayMs: number) => Math.min(MAX_DELAY, Math.max(DELAY, Math.ceil(oneWayMs / FRAME_MS) + 2))
 
 export class Lockstep {
   frame = 0
@@ -13,12 +16,14 @@ export class Lockstep {
   readonly #sums = new Map<number, number>()
   readonly #theirSums = new Map<number, number>()
   readonly player: 1 | 2
+  readonly delay: number
   readonly #send: (message: LinkMessage) => void
 
-  constructor(player: 1 | 2, send: (message: LinkMessage) => void) {
+  constructor(player: 1 | 2, send: (message: LinkMessage) => void, delay = DELAY) {
     this.player = player
+    this.delay = delay
     this.#send = send
-    for (let f = 0; f < DELAY; f++) {
+    for (let f = 0; f < delay; f++) {
       this.#mine.set(f, 0)
       this.#theirs.set(f, 0)
     }
@@ -26,16 +31,17 @@ export class Lockstep {
 
   receive(message: LinkMessage) {
     const ahead = message.f - this.frame
+    const window = this.delay * 2
     if (message.t === 'in') {
-      if (ahead >= 0 && ahead <= WINDOW) this.#theirs.set(message.f, message.b)
-    } else if (Math.abs(ahead) <= WINDOW && message.f % SUM_EVERY === 0) {
+      if (ahead >= 0 && ahead <= window) this.#theirs.set(message.f, message.b)
+    } else if (Math.abs(ahead) <= window && message.f % SUM_EVERY === 0) {
       this.#theirSums.set(message.f, message.s)
       this.#compare(message.f)
     }
   }
 
   next(local: number): [number, number] | null {
-    const ahead = this.frame + DELAY
+    const ahead = this.frame + this.delay
     if (!this.#mine.has(ahead)) {
       this.#mine.set(ahead, local)
       this.#send({ t: 'in', f: ahead, b: local })
