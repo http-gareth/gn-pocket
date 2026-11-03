@@ -229,7 +229,9 @@ const openLink = (first: ClientMessage) => {
   ws.addEventListener('message', async event => {
     const message = link === current ? parseServerMessage(String(event.data)) : null
     if (!message) return
-    if (message.t === 'room') {
+    if (message.t === 'ping') {
+      send({ t: 'pong' })
+    } else if (message.t === 'room') {
       linkCode.textContent = message.code
       showLink('Ask player 2 to open MENU, then JOIN with this code:', 'code')
     } else if (message.t === 'nope') {

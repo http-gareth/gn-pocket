@@ -1,8 +1,8 @@
 import { MAX_DELAY } from './lockstep.ts'
 
 export type LinkMessage = { t: 'in', f: number, b: number } | { t: 'sum', f: number, s: number }
-export type ClientMessage = { t: 'host' } | { t: 'join', code: string } | LinkMessage
-export type ServerMessage = { t: 'room', code: string } | { t: 'nope' } | { t: 'start', player: 1 | 2, delay: number } | { t: 'bye' } | LinkMessage
+export type ClientMessage = { t: 'host' } | { t: 'join', code: string } | { t: 'pong' } | LinkMessage
+export type ServerMessage = { t: 'room', code: string } | { t: 'nope' } | { t: 'start', player: 1 | 2, delay: number } | { t: 'bye' } | { t: 'ping' } | LinkMessage
 
 export const CODE_LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
 export const CODE_LENGTH = 4
@@ -32,7 +32,7 @@ const linkMessage = (value: Record<string, unknown>): LinkMessage | null => {
 export const parseClientMessage = (text: string): ClientMessage | null => {
   const value = object(text)
   if (!value) return null
-  if (value.t === 'host') return { t: 'host' }
+  if (value.t === 'host' || value.t === 'pong') return { t: value.t }
   if (value.t === 'join' && typeof value.code === 'string' && value.code.length <= CODE_LENGTH * 2) {
     return { t: 'join', code: value.code.toUpperCase() }
   }
@@ -44,7 +44,7 @@ export const parseServerMessage = (text: string): ServerMessage | null => {
   if (!value) return null
   const { t, code, player, delay } = value
   if (t === 'room' && typeof code === 'string' && CODE.test(code)) return { t, code }
-  if (t === 'nope' || t === 'bye') return { t }
+  if (t === 'nope' || t === 'bye' || t === 'ping') return { t }
   if (t === 'start' && (player === 1 || player === 2) && isWhole(delay, MAX_DELAY) && delay > 0) return { t, player, delay }
   return linkMessage(value)
 }

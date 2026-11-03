@@ -5,7 +5,7 @@ import { CODE_LENGTH, CODE_LETTERS, MAX_MESSAGE_BYTES, parseClientMessage } from
 import { delayFor } from '../src/netplay/lockstep.ts'
 import type { ServerMessage } from '../src/netplay/protocol.ts'
 
-type Peer = { socket: Duplex, address: string, room?: Room, sent: number, since: number, misses: number, rtt: number | null, pingAt: number }
+type Peer = { socket: Duplex, address: string, room?: Room, sent: number, since: number, misses: number, rtt: number | null, pings: number, pingAt: number }
 type Room = { code: string, host: Peer, guest?: Peer, started: boolean }
 
 const GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
@@ -14,7 +14,8 @@ const MESSAGES_PER_SECOND = 300
 const JOINS_PER_MINUTE = 10
 const MISSES_PER_CONNECTION = 5
 const IDLE_MS = 10 * 60_000
-const PING_TIMEOUT_MS = 1500
+const PINGS = 3
+const PING_TIMEOUT_MS = 3000
 
 const rooms = new Map<string, Room>()
 const joins = new Map<string, { count: number, since: number }>()
@@ -48,15 +49,28 @@ const leave = (peer: Peer) => {
 }
 
 const ping = (peer: Peer) => {
-  peer.rtt = null
   peer.pingAt = Date.now()
-  if (!peer.socket.destroyed) peer.socket.write(frame(9, Buffer.alloc(0)))
+  send(peer, { t: 'ping' })
+}
+
+const measure = (peer: Peer) => {
+  peer.rtt = null
+  peer.pings = 0
+  ping(peer)
+}
+
+const pong = (peer: Peer) => {
+  if (!peer.pingAt) return
+  peer.rtt = Math.max(peer.rtt ?? 0, Date.now() - peer.pingAt)
+  peer.pingAt = 0
+  if (++peer.pings < PINGS) ping(peer)
+  else if (peer.room) startRoom(peer.room, false)
 }
 
 const startRoom = (room: Room, timedOut: boolean) => {
   const { host, guest } = room
   if (room.started || !guest || rooms.get(room.code) !== room) return
-  if (!timedOut && (host.rtt === null || guest.rtt === null)) return
+  if (!timedOut && (host.pings < PINGS || guest.pings < PINGS)) return
   room.started = true
   const delay = delayFor(((host.rtt ?? PING_TIMEOUT_MS) + (guest.rtt ?? PING_TIMEOUT_MS)) / 2)
   send(host, { t: 'start', player: 1, delay })
@@ -108,9 +122,11 @@ const handle = (peer: Peer, text: string) => {
     leave(peer)
     room.guest = peer
     peer.room = room
-    ping(room.host)
-    ping(peer)
+    measure(room.host)
+    measure(peer)
     setTimeout(() => startRoom(room, true), PING_TIMEOUT_MS)
+  } else if (message.t === 'pong') {
+    pong(peer)
   } else {
     send(partner(peer), message)
   }
@@ -142,7 +158,7 @@ export const upgrade = (req: IncomingMessage, socket: Duplex, head: Buffer) => {
   if (peers >= MAX_PEERS) return refuse(socket, '503 Service Unavailable')
   const accept = createHash('sha1').update(key + GUID).digest('base64')
   socket.write(['HTTP/1.1 101 Switching Protocols', 'Upgrade: websocket', 'Connection: Upgrade', `Sec-WebSocket-Accept: ${accept}`, '', ''].join('\r\n'))
-  const peer: Peer = { socket, address: clientAddress(req), sent: 0, since: Date.now(), misses: 0, rtt: null, pingAt: 0 }
+  const peer: Peer = { socket, address: clientAddress(req), sent: 0, since: Date.now(), misses: 0, rtt: null, pings: 0, pingAt: 0 }
   peers++
   let buffer = Buffer.alloc(0)
   socket.setTimeout(IDLE_MS, () => close(peer, 1001))
@@ -169,11 +185,7 @@ export const upgrade = (req: IncomingMessage, socket: Duplex, head: Buffer) => {
       if (!withinRate(peer)) return close(peer, 1008)
       if (op === 8) return close(peer, 1000)
       if (op === 9) socket.write(frame(10, data))
-      else if (op === 10 && peer.pingAt) {
-        peer.rtt = Date.now() - peer.pingAt
-        peer.pingAt = 0
-        if (peer.room) startRoom(peer.room, false)
-      } else if (op === 1) handle(peer, data.toString('utf8'))
+      else if (op === 1) handle(peer, data.toString('utf8'))
     }
   }
   const safely = (chunk: Buffer) => {

@@ -2,12 +2,13 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { fetchRaw, startServer } from './start-server.ts'
 
-const connect = (port: number) => new Promise<{ ws: WebSocket, next: () => Promise<any> }>(resolve => {
+const connect = (port: number, pongAfter = 0) => new Promise<{ ws: WebSocket, next: () => Promise<any> }>(resolve => {
   const ws = new WebSocket(`ws://localhost:${port}/link`)
   const inbox: any[] = []
   const waiting: ((value: any) => void)[] = []
   ws.addEventListener('message', e => {
     const message = JSON.parse(String(e.data))
+    if (message.t === 'ping') return void setTimeout(() => ws.send(JSON.stringify({ t: 'pong' })), pongAfter)
     const waiter = waiting.shift()
     if (waiter) waiter(message)
     else inbox.push(message)
@@ -60,6 +61,24 @@ test('the link cable refuses connections from other websites', async () => {
     assert.equal(attempt.status, 403)
     const wrongPath = await fetchRaw(server.port, '/other', { headers: handshake })
     assert.equal(wrongPath.status, 400)
+  } finally {
+    server.stop()
+  }
+})
+
+test('the relay times each player and gives far-away players a longer link delay', async () => {
+  const server = await startServer()
+  try {
+    const host = await connect(server.port, 200)
+    host.ws.send(JSON.stringify({ t: 'host' }))
+    const { code } = await host.next()
+    const guest = await connect(server.port)
+    guest.ws.send(JSON.stringify({ t: 'join', code }))
+    const start = await host.next()
+    assert.equal(start.t, 'start')
+    assert.ok(start.delay >= 8, `a 200 ms player gets a longer delay (${start.delay} frames)`)
+    assert.deepEqual(await guest.next(), { t: 'start', player: 2, delay: start.delay }, 'both consoles use the same delay')
+    for (const peer of [host, guest]) peer.ws.close()
   } finally {
     server.stop()
   }
