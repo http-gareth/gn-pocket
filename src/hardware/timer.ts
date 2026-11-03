@@ -21,11 +21,11 @@ export class Timer {
   load(counter: number) { this.#counter = counter }
 
   tick(cycles: number) {
-    for (let i = 0; i < cycles; i += 4) {
-      const before = this.#selectedBit()
-      this.#counter = (this.#counter + 4) & 0xffff
-      if (before && !this.#selectedBit()) this.#incrementTima()
-    }
+    const tac = this.#mem.io[REG.TAC]
+    const period = TAC_BITS[tac & 3] * 2
+    const edges = tac & 4 ? Math.floor((this.#counter + cycles) / period) - Math.floor(this.#counter / period) : 0
+    this.#counter = (this.#counter + cycles) & 0xffff
+    for (let i = 0; i < edges; i++) this.#incrementTima()
     this.#sync()
   }
 

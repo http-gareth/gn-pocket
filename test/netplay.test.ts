@@ -1,20 +1,10 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
-import { assemble, resolveFiles } from '../src/assembler/assembler.ts'
 import { GameBoy } from '../src/hardware/gameboy.ts'
-import { LIBRARY, libraryAsm } from '../src/assembler/library.ts'
-import type { Cart } from '../src/assembler/library.ts'
 import { DELAY, Lockstep, WINDOW, checksum } from '../src/netplay/lockstep.ts'
 import { parseClientMessage, parseServerMessage } from '../src/netplay/protocol.ts'
 import type { LinkMessage } from '../src/netplay/protocol.ts'
-
-const read = (path: string) => readFileSync(new URL(`../games/${path}`, import.meta.url), 'utf8')
-const carts: Cart[] = JSON.parse(read('games.json'))
-const rom = async (entry: string) => {
-  const files = await resolveFiles(entry, read, { [LIBRARY]: libraryAsm(carts) })
-  return assemble(files[entry], { files, name: entry }).rom
-}
+import { build } from './carts.ts'
 
 const seeded = (seed: number) => () => {
   seed = (seed * 1103515245 + 12345) >>> 0
@@ -22,7 +12,7 @@ const seeded = (seed: number) => () => {
 }
 
 test('two linked consoles over a laggy, jittery network play the identical game', async () => {
-  const knockout = await rom('knockout.asm')
+  const { rom: knockout } = await build('knockout.asm')
   const random = seeded(7)
   const wire: { at: number, to: 0 | 1, message: LinkMessage }[] = []
   let clock = 0

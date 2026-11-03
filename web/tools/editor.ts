@@ -1,12 +1,13 @@
 import { assemble, resolveFiles } from '../../src/assembler/assembler.ts'
 import { LEVEL_HEIGHT as H, LEVEL_WIDTH as W, parseLevel } from '../../src/assembler/level.ts'
 import { readGame, store, stored } from '../shared.ts'
+import { PALETTES, rgb } from '../console/screen.ts'
 
 const LEVEL_KEY = 'editor:level'
 const FIRST_TILE = 64
 const TILE_DIRT = FIRST_TILE + 1
 const TILE_GRUB = FIRST_TILE + 40
-const SHADES = [[0xe0, 0xf8, 0xd0], [0x88, 0xc0, 0x70], [0x34, 0x68, 0x56], [0x08, 0x18, 0x20]]
+const SHADES = PALETTES[0].bg.map(rgb)
 const TOOLS = [
   { ch: '#', name: 'Ground' },
   { ch: 'B', name: 'Brick' },

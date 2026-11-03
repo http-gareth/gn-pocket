@@ -1,18 +1,10 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
-import { assemble, includesOf } from '../src/assembler/assembler.ts'
 import { GameBoy } from '../src/hardware/gameboy.ts'
 import { REG } from '../src/hardware/memory.ts'
+import { build } from './carts.ts'
 
-const files: Record<string, string> = {}
-const load = (path: string) => {
-  if (path in files) return
-  files[path] = readFileSync(new URL(`../games/${path}`, import.meta.url), 'utf8')
-  includesOf(files[path]).forEach(load)
-}
-load('pong.asm')
-const rom = assemble(files['pong.asm'], { files, name: 'pong.asm' }).rom
+const { rom } = await build('pong.asm')
 
 const boot = () => new GameBoy(rom)
 const frames = (gb: GameBoy, count: number) => { for (let i = 0; i < count; i++) gb.runFrame() }

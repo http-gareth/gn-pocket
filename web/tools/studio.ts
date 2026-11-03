@@ -3,8 +3,9 @@ import { HEIGHT, WIDTH } from '../../src/hardware/ppu.ts'
 import type { Button } from '../../src/hardware/memory.ts'
 import { assemble, resolveFiles } from '../../src/assembler/assembler.ts'
 import { readGame, store, stored } from '../shared.ts'
+import { PALETTES, rgb } from '../console/screen.ts'
 
-const SHADES = [[0xe0, 0xf8, 0xd0], [0x88, 0xc0, 0x70], [0x34, 0x68, 0x56], [0x08, 0x18, 0x20]]
+const SHADES = PALETTES[0].bg.map(rgb)
 const FRAME_MS = 1000 / 59.7275
 const KEYS: Record<string, Button> = {
   ArrowRight: 'right', ArrowLeft: 'left', ArrowUp: 'up', ArrowDown: 'down',

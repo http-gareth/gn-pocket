@@ -1,5 +1,3 @@
-import type { Bus } from './cpu.ts'
-
 export const BUTTONS = ['right', 'left', 'up', 'down', 'a', 'b', 'select', 'start'] as const
 export type Button = typeof BUTTONS[number]
 
@@ -16,7 +14,7 @@ export const REG = {
 
 export type MemoryState = { vram: Uint8Array, wram: Uint8Array, oam: Uint8Array, hram: Uint8Array, io: Uint8Array, ie: number, pressed: number }
 
-export class Memory implements Bus {
+export class Memory {
   readonly vram = new Uint8Array(0x2000)
   readonly wram = new Uint8Array(0x2000)
   readonly oam = new Uint8Array(0xa0)

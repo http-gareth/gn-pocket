@@ -1,15 +1,10 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
-import { assemble, resolveFiles } from '../src/assembler/assembler.ts'
-import { GameBoy } from '../src/hardware/gameboy.ts'
 import { checksum } from '../src/netplay/lockstep.ts'
-
-const read = (path: string) => readFileSync(new URL(`../games/${path}`, import.meta.url), 'utf8')
+import { boot } from './carts.ts'
 
 test('a snapshot rewinds the whole machine, and replaying the same buttons repeats history exactly', async () => {
-  const files = await resolveFiles('pip.asm', read, {})
-  const gb = new GameBoy(assemble(files['pip.asm'], { files, name: 'pip.asm' }).rom)
+  const gb = await boot('pip.asm')
   for (let i = 0; i < 40; i++) gb.runFrame()
   gb.press('start')
   for (let i = 0; i < 3; i++) gb.runFrame()

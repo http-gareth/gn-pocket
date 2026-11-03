@@ -8,7 +8,7 @@ const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const SERVED = new Set(['web', 'src', 'games'])
 const TYPES: Record<string, string> = {
   '.html': 'text/html', '.css': 'text/css', '.ts': 'text/javascript', '.js': 'text/javascript',
-  '.asm': 'text/plain', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png'
+  '.asm': 'text/plain', '.json': 'application/json', '.svg': 'image/svg+xml'
 }
 const HOST = /^[a-z0-9.-]+(:\d{1,5})?$/i
 

@@ -1,8 +1,6 @@
 export interface Cart {
-  id: string
   title: string
   file: string
-  blurb: string
 }
 
 export const MENU = 'menu.asm'

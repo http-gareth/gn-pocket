@@ -1,17 +1,11 @@
-export interface Bus {
-  read(addr: number): number
-  write(addr: number, value: number): void
-}
+import type { Memory } from './memory.ts'
 
 export const FLAG_Z = 0x80
 export const FLAG_N = 0x40
 export const FLAG_H = 0x20
 export const FLAG_C = 0x10
 
-const IE = 0xffff
-const IF = 0xff0f
-
-export class IllegalOpcode extends Error {}
+const IF = 0x0f
 
 export class CPU {
   a = 0x01
@@ -29,7 +23,7 @@ export class CPU {
   cycles = 0
   #imeDelay = 0
   #haltBug = false
-  #bus: Bus
+  #bus: Memory
 
   save() {
     return [this.a, this.f, this.b, this.c, this.d, this.e, this.h, this.l, this.sp, this.pc, +this.ime, +this.halted, this.#imeDelay, +this.#haltBug]
@@ -43,7 +37,7 @@ export class CPU {
     this.#haltBug = state[13] === 1
   }
 
-  constructor(bus: Bus) {
+  constructor(bus: Memory) {
     this.#bus = bus
   }
 
@@ -58,7 +52,7 @@ export class CPU {
 
   step(): number {
     const start = this.cycles
-    const pending = this.#bus.read(IE) & this.#bus.read(IF) & 0x1f
+    const pending = this.#pending()
     if (this.halted) {
       if (!pending) {
         this.#idle()
@@ -69,7 +63,7 @@ export class CPU {
     if (this.ime && pending) {
       const bit = pending & -pending
       this.ime = false
-      this.#bus.write(IF, this.#bus.read(IF) & ~bit)
+      this.#bus.io[IF] &= ~bit
       this.#idle()
       this.#idle()
       this.#push(this.pc)
@@ -81,6 +75,8 @@ export class CPU {
     if (this.#imeDelay && --this.#imeDelay === 0) this.ime = true
     return this.cycles - start
   }
+
+  #pending() { return this.#bus.ie & this.#bus.io[IF] & 0x1f }
 
   #flag(mask: number) { return (this.f & mask) !== 0 }
 
@@ -257,8 +253,7 @@ export class CPU {
   }
 
   #halt() {
-    const pending = this.#bus.read(IE) & this.#bus.read(IF) & 0x1f
-    if (!this.ime && pending) this.#haltBug = true
+    if (!this.ime && this.#pending()) this.#haltBug = true
     else this.halted = true
   }
 
@@ -411,7 +406,7 @@ export class CPU {
       case 0xf3: this.ime = false; this.#imeDelay = 0; return
       case 0xfb: this.#imeDelay = 2; return
       default:
-        throw new IllegalOpcode(`illegal opcode $${op.toString(16).padStart(2, '0')} at $${((this.pc - 1) & 0xffff).toString(16).padStart(4, '0')}`)
+        throw new Error(`illegal opcode $${op.toString(16).padStart(2, '0')} at $${((this.pc - 1) & 0xffff).toString(16).padStart(4, '0')}`)
     }
   }
 }

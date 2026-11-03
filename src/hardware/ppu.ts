@@ -107,41 +107,40 @@ export class PPU {
     return (((hi >> bit) & 1) << 1) | ((lo >> bit) & 1)
   }
 
-  #bgTile(index: number, unsigned: boolean) {
-    return unsigned ? index * 16 : 0x1000 + ((index ^ 0x80) - 0x80) * 16
+  #drawTiles(row: number, from: number, map: number, y: number, scrollX: number, unsigned: boolean) {
+    const vram = this.#mem.vram
+    const bgp = this.#mem.io[REG.BGP]
+    const tiles = map + (y >> 3) * 32
+    const fine = (y & 7) * 2
+    let lo = 0
+    let hi = 0
+    for (let x = from; x < WIDTH; x++) {
+      const px = (x + scrollX) & 0xff
+      if (x === from || !(px & 7)) {
+        const tile = vram[tiles + (px >> 3)]
+        const addr = (unsigned ? tile * 16 : 0x1000 + ((tile ^ 0x80) - 0x80) * 16) + fine
+        lo = vram[addr]
+        hi = vram[addr + 1]
+      }
+      const bit = 7 - (px & 7)
+      const color = (((hi >> bit) & 1) << 1) | ((lo >> bit) & 1)
+      this.#bgColor[x] = color
+      this.frame[row + x] = (bgp >> (color * 2)) & 3
+    }
   }
 
   #renderLine(ly: number) {
     const io = this.#mem.io
-    const vram = this.#mem.vram
     const lcdc = io[REG.LCDC]
-    const bgp = io[REG.BGP]
     const row = ly * WIDTH
     const unsigned = (lcdc & 0x10) !== 0
     this.layer.fill(0, row, row + WIDTH)
 
     if (lcdc & 0x01) {
-      const map = lcdc & 0x08 ? 0x1c00 : 0x1800
-      const y = (ly + io[REG.SCY]) & 0xff
-      for (let x = 0; x < WIDTH; x++) {
-        const px = (x + io[REG.SCX]) & 0xff
-        const tile = vram[map + (y >> 3) * 32 + (px >> 3)]
-        const color = this.#tilePixel(this.#bgTile(tile, unsigned), y & 7, px & 7)
-        this.#bgColor[x] = color
-        this.frame[row + x] = (bgp >> (color * 2)) & 3
-      }
-
+      this.#drawTiles(row, 0, lcdc & 0x08 ? 0x1c00 : 0x1800, (ly + io[REG.SCY]) & 0xff, io[REG.SCX], unsigned)
       const wx = io[REG.WX] - 7
       if (lcdc & 0x20 && io[REG.WY] <= ly && wx < WIDTH) {
-        const wmap = lcdc & 0x40 ? 0x1c00 : 0x1800
-        const wy = this.#windowLine++
-        for (let x = Math.max(0, wx); x < WIDTH; x++) {
-          const px = x - wx
-          const tile = vram[wmap + (wy >> 3) * 32 + (px >> 3)]
-          const color = this.#tilePixel(this.#bgTile(tile, unsigned), wy & 7, px & 7)
-          this.#bgColor[x] = color
-          this.frame[row + x] = (bgp >> (color * 2)) & 3
-        }
+        this.#drawTiles(row, Math.max(0, wx), lcdc & 0x40 ? 0x1c00 : 0x1800, this.#windowLine++, -wx, unsigned)
       }
     } else {
       this.#bgColor.fill(0)

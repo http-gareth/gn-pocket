@@ -1,5 +1,6 @@
 const CPU_HZ = 4194304
 const SEQUENCER_PERIOD = 8192
+const BATCH_CYCLES = 64
 const DUTY = [0b00000001, 0b10000001, 0b10000111, 0b01111110]
 const NOISE_DIVISORS = [8, 16, 32, 48, 64, 80, 96, 112]
 const WAVE_SHIFT = [4, 0, 1, 2]
@@ -57,6 +58,7 @@ class Pulse extends Enveloped {
   #timer = 0
 
   tick(cycles: number) {
+    if (!this.on) return
     this.#timer -= cycles
     while (this.#timer <= 0) {
       this.#timer += (2048 - this.freq) * 4
@@ -125,6 +127,7 @@ class Wave extends Channel {
   #timer = 0
 
   tick(cycles: number) {
+    if (!this.on) return
     this.#timer -= cycles
     while (this.#timer <= 0) {
       this.#timer += (2048 - this.freq) * 2
@@ -158,6 +161,7 @@ class Noise extends Enveloped {
   }
 
   tick(cycles: number) {
+    if (!this.on) return
     this.#timer -= cycles
     while (this.#timer <= 0) {
       this.#timer += this.#period
@@ -193,9 +197,12 @@ export class APU {
   #step = 0
   #clock = 0
   #dc = 0
-  #samples: number[] = []
+  #pending = 0
+  #samples = new Float32Array(4096)
+  #count = 0
 
   read(reg: number) {
+    this.#catchUp()
     if (reg >= 0x30) return this.wave.ram[reg - 0x30]
     if (reg === 0x26) {
       return (this.#power ? 0x80 : 0) | 0x70 |
@@ -206,6 +213,7 @@ export class APU {
   }
 
   write(reg: number, v: number) {
+    this.#catchUp()
     if (reg >= 0x30) { this.wave.ram[reg - 0x30] = v; return }
     if (reg === 0x26) {
       this.#power = (v & 0x80) !== 0
@@ -255,6 +263,13 @@ export class APU {
   }
 
   tick(cycles: number) {
+    this.#pending += cycles
+    if (this.#pending >= BATCH_CYCLES) this.#catchUp()
+  }
+
+  #catchUp() {
+    const cycles = this.#pending
+    this.#pending = 0
     if (this.#power) {
       this.pulse1.tick(cycles)
       this.pulse2.tick(cycles)
@@ -270,13 +285,18 @@ export class APU {
     this.#clock += cycles * this.sampleRate
     while (this.#clock >= CPU_HZ) {
       this.#clock -= CPU_HZ
-      this.#samples.push(this.#mix())
+      if (this.#count === this.#samples.length) {
+        const grown = new Float32Array(this.#count * 2)
+        grown.set(this.#samples)
+        this.#samples = grown
+      }
+      this.#samples[this.#count++] = this.#mix()
     }
   }
 
   takeSamples() {
-    const out = Float32Array.from(this.#samples)
-    this.#samples.length = 0
+    const out = this.#samples.slice(0, this.#count)
+    this.#count = 0
     return out
   }
 
@@ -301,13 +321,12 @@ export class APU {
     if (!this.#power) return this.#highPass(0)
     const nr50 = this.#regs[0x14]
     const nr51 = this.#regs[0x15]
-    const outputs = [this.pulse1.output(), this.pulse2.output(), this.wave.output(), this.noise.output()]
-    let left = 0
-    let right = 0
-    for (let i = 0; i < 4; i++) {
-      if (nr51 & (0x10 << i)) left += outputs[i]
-      if (nr51 & (0x01 << i)) right += outputs[i]
-    }
+    const p1 = this.pulse1.output()
+    const p2 = this.pulse2.output()
+    const wave = this.wave.output()
+    const noise = this.noise.output()
+    const left = (nr51 & 0x10 ? p1 : 0) + (nr51 & 0x20 ? p2 : 0) + (nr51 & 0x40 ? wave : 0) + (nr51 & 0x80 ? noise : 0)
+    const right = (nr51 & 0x01 ? p1 : 0) + (nr51 & 0x02 ? p2 : 0) + (nr51 & 0x04 ? wave : 0) + (nr51 & 0x08 ? noise : 0)
     const level = (left * (((nr50 >> 4) & 7) + 1) + right * ((nr50 & 7) + 1)) / (2 * 4 * 15 * 8)
     return this.#highPass(level)
   }

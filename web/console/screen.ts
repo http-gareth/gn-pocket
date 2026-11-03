@@ -10,7 +10,7 @@ export const PALETTES: Palette[] = [
   { name: 'NEON', bg: ['#0d0f1a', '#2d3a8c', '#9a5cf0', '#f2f2ff'], obj: ['#0d0f1a', '#39ff88', '#ff3d8b', '#ffffff'], alt: ['#0d0f1a', '#ffe14d', '#29d3ff', '#ffffff'] }
 ]
 
-const rgb = (hex: string) => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16))
+export const rgb = (hex: string) => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16))
 
 export class Screen {
   colors = new Uint8Array(12 * 3)

@@ -62,7 +62,7 @@ const tileRow = (pixels: string) => {
   return (hi << 8) | lo
 }
 
-export const evaluate = (src: string, lookup: (name: string) => number | undefined, final: boolean): number => {
+const evaluate = (src: string, lookup: (name: string) => number | undefined, final: boolean): number => {
   const tokens = tokenize(src)
   let i = 0
   const peek = () => tokens[i]
@@ -144,7 +144,7 @@ const stripComment = (line: string) => {
 
 const unbracket = (s: string) => s.trim().replace(/^\[(.*)\]$/s, '$1')
 
-export const encode = (mn: string, raw: string[], ctx: Ctx): number[] => {
+const encode = (mn: string, raw: string[], ctx: Ctx): number[] => {
   const ops = raw.map(s => s.trim())
   const n = ops.map(s => s.toLowerCase().replace(/\s+/g, ''))
   const count = ops.length
@@ -274,7 +274,7 @@ interface SourceLine {
 
 const INCLUDE = /^\s*include\s+"([^"]+)"\s*$/i
 
-export const includesOf = (source: string) =>
+const includesOf = (source: string) =>
   source.split(/\r?\n/).map(line => INCLUDE.exec(stripComment(line))?.[1]).filter((path): path is string => !!path)
 
 export const resolveFiles = async (entry: string, read: (path: string) => string | Promise<string>, known: Record<string, string> = {}) => {

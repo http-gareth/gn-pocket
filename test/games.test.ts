@@ -1,19 +1,10 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
-import { assemble, resolveFiles } from '../src/assembler/assembler.ts'
-import { GameBoy } from '../src/hardware/gameboy.ts'
-import { LIBRARY, MENU, libraryAsm } from '../src/assembler/library.ts'
-import type { Cart } from '../src/assembler/library.ts'
+import type { GameBoy } from '../src/hardware/gameboy.ts'
 import type { Button } from '../src/hardware/memory.ts'
-
-const read = (path: string) => readFileSync(new URL(`../games/${path}`, import.meta.url), 'utf8')
-const carts: Cart[] = JSON.parse(read('games.json'))
-
-const boot = async (entry: string) => {
-  const files = await resolveFiles(entry, read, { [LIBRARY]: libraryAsm(carts) })
-  return new GameBoy(assemble(files[entry], { files, name: entry }).rom)
-}
+import { MENU } from '../src/assembler/library.ts'
+import { LEVEL_HEIGHT, LEVEL_WIDTH, withLevel } from '../src/assembler/level.ts'
+import { boot, carts, read } from './carts.ts'
 
 const frames = (gb: GameBoy, count: number) => { for (let i = 0; i < count; i++) gb.runFrame() }
 const tap = (gb: GameBoy, button: Button) => { gb.press(button); frames(gb, 2); gb.release(button); frames(gb, 2) }
@@ -670,12 +661,8 @@ test('the Game Studio example builds and the smiley moves with the D-pad', async
 })
 
 test('a level from the editor drops into Pip Quest in place of World 1-1', async () => {
-  const pip = read('pip.asm')
-  const rows = Array.from({ length: 17 }, (_, r) => (r >= 15 ? '#' : r === 13 ? 'o' : ' ').repeat(128))
-  const custom = pip.replace(/Level1:\r?\n(    db ".*"\r?\n){17}/, `Level1:\n${rows.map(row => `    db "${row}"\n`).join('')}`)
-  assert.notEqual(custom, pip, 'the level rows were found and replaced')
-  const files = await resolveFiles('my-level.asm', read, { 'my-level.asm': custom })
-  const gb = new GameBoy(assemble(files['my-level.asm'], { files, name: 'my-level.asm' }).rom)
+  const rows = Array.from({ length: LEVEL_HEIGHT }, (_, r) => (r >= 15 ? '#' : r === 13 ? 'o' : ' ').repeat(LEVEL_WIDTH))
+  const gb = await boot('my-level.asm', { 'my-level.asm': withLevel(read('pip.asm'), rows) })
   frames(gb, 30)
   tap(gb, 'start')
   frames(gb, 110)
