@@ -1,0 +1,15 @@
+{
+  "name": "gn-pocket",
+  "main": "cloudflare/worker.ts",
+  "compatibility_date": "2025-10-01",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": ["/link"]
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "ROOMS", "class_name": "LinkRoom" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["LinkRoom"] }],
+  "observability": { "enabled": true }
+}

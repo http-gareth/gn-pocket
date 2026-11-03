@@ -17,7 +17,7 @@ No emulator libraries, no borrowed ROMs, no dependencies. About 3,000 lines of T
 | **Hardware** | The SM83 CPU (every instruction, timed per memory access), memory map and interrupts, timer, joypad, the scanline picture processor, and all four sound channels | [`src/hardware`](src/hardware) |
 | **Toolchain** | An assembler with includes, local labels, expressions and pixel-art rows (`` dw `00333300 ``). It runs in the browser, so every cartridge is built live when you insert it | [`src/assembler`](src/assembler) |
 | **Games** | Ten original cartridges, a menu cartridge that scrolls the library, and a shared library for text, sound effects and music | [`games`](games) |
-| **Link cable** | Lockstep netplay: both consoles run the same game and swap button presses every frame, through a WebSocket relay written on Node's standard library | [`src/netplay`](src/netplay), [`server`](server) |
+| **Link cable** | Lockstep netplay: both consoles run the same game and swap button presses every frame. One room implementation runs behind two relays: Node's standard library at home, and a Cloudflare Durable Object per room online | [`src/netplay`](src/netplay), [`server`](server), [`cloudflare`](cloudflare) |
 | **The console** | The handheld itself: touch D-pad with diagonals, rumble, colour palettes, rewind, save states and Nerd Mode | [`web/console`](web/console) |
 | **Make your own** | A Game Studio (write assembly, press RUN, play it) and a Pip Quest level editor that paints with the cartridge's real tiles | [`web/tools`](web/tools) |
 
@@ -62,7 +62,7 @@ gn-pocket/
 ├── src/
 │   ├── hardware/      cpu · memory · ppu · apu · timer · gameboy
 │   ├── assembler/     assembler · library (menu list) · level (editor format)
-│   └── netplay/       lockstep · protocol (message validation)
+│   └── netplay/       lockstep · protocol (message validation) · room (pairing, timing, relaying)
 ├── games/             ten cartridges + menu.asm, lib/ (font, sound, music), examples/
 ├── web/
 │   ├── console/       main · screen · speaker · touch · nerd · saves · audio-worklet
@@ -70,7 +70,9 @@ gn-pocket/
 │   ├── css/
 │   └── index.html · studio.html · editor.html
 ├── server/            index · files (static, security headers) · relay (link cable)
-├── test/              71 tests
+├── cloudflare/        worker (game files + one Durable Object per link room)
+├── scripts/build.ts   static build for Cloudflare
+├── test/              74 tests
 └── docs/              README images
 ```
 
@@ -78,7 +80,8 @@ gn-pocket/
 
 ```bash
 npm start       # http://localhost:5190, plus the link-cable server
-npm test        # 71 tests
+npm test        # 74 tests
+npm run build   # static copy in dist/ for Cloudflare
 ```
 
 Node 22.13 or newer. There's nothing to install: Node strips the TypeScript itself.
@@ -87,7 +90,9 @@ To play each other, one player taps **MENU → HOST A GAME** and the other types
 
 ## Hosting
 
-The hosted copy runs the same `npm start` server on [Render](https://render.com), set up by [`render.yaml`](render.yaml). To run your own, fork the repo and create a Render Blueprint from it. On the free plan the server sleeps after 15 minutes without visitors, so the first visit after that takes up to a minute to wake.
+The hosted copy runs on [Cloudflare Workers](https://developers.cloudflare.com/workers/), set up by [`wrangler.json`](wrangler.json). The game files are served as static assets, and each link room is a Durable Object that Cloudflare places near the player who opened it, so two players in the same country get a short button lag. It never sleeps, and it fits the free plan for a hobby amount of two-player play. To run your own, fork the repo and import it into Workers with build command `npm run build`.
+
+`npm test` checks the relay on your PC. To run the same link tests against the Cloudflare version, start `npx wrangler dev` and set `LINK_URL=ws://127.0.0.1:8787`.
 
 ## Controls
 

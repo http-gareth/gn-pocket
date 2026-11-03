@@ -1,14 +1,22 @@
 import { MAX_DELAY } from './lockstep.ts'
 
 export type LinkMessage = { t: 'in', f: number, b: number } | { t: 'sum', f: number, s: number }
-export type ClientMessage = { t: 'host' } | { t: 'join', code: string } | { t: 'pong' } | LinkMessage
+export type ClientMessage = { t: 'pong' } | LinkMessage
 export type ServerMessage = { t: 'room', code: string } | { t: 'nope' } | { t: 'start', player: 1 | 2, delay: number } | { t: 'bye' } | { t: 'ping' } | LinkMessage
 
 export const CODE_LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
 export const CODE_LENGTH = 4
+export const CODE = /^[A-Z]{4}$/
 export const MAX_MESSAGE_BYTES = 256
 
-const CODE = /^[A-Z]{4}$/
+export const newCode = () => {
+  let code = ''
+  while (code.length < CODE_LENGTH) {
+    const [byte] = crypto.getRandomValues(new Uint8Array(1))
+    if (byte < 240) code += CODE_LETTERS[byte % CODE_LETTERS.length]
+  }
+  return code
+}
 
 const isWhole = (value: unknown, max: number): value is number =>
   Number.isSafeInteger(value) && (value as number) >= 0 && (value as number) <= max
@@ -32,10 +40,7 @@ const linkMessage = (value: Record<string, unknown>): LinkMessage | null => {
 export const parseClientMessage = (text: string): ClientMessage | null => {
   const value = object(text)
   if (!value) return null
-  if (value.t === 'host' || value.t === 'pong') return { t: value.t }
-  if (value.t === 'join' && typeof value.code === 'string' && value.code.length <= CODE_LENGTH * 2) {
-    return { t: 'join', code: value.code.toUpperCase() }
-  }
+  if (value.t === 'pong') return { t: 'pong' }
   return linkMessage(value)
 }
 
@@ -47,4 +52,11 @@ export const parseServerMessage = (text: string): ServerMessage | null => {
   if (t === 'nope' || t === 'bye' || t === 'ping') return { t }
   if (t === 'start' && (player === 1 || player === 2) && isWhole(delay, MAX_DELAY) && delay > 0) return { t, player, delay }
   return linkMessage(value)
+}
+
+export const linkRole = (search: string) => {
+  const params = new URLSearchParams(search)
+  if (params.has('host')) return { host: true as const }
+  const code = (params.get('join') ?? '').toUpperCase()
+  return CODE.test(code) ? { host: false as const, code } : null
 }

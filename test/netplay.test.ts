@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { GameBoy } from '../src/hardware/gameboy.ts'
 import { DELAY, FRAME_MS, Lockstep, MAX_DELAY, checksum, delayFor } from '../src/netplay/lockstep.ts'
-import { parseClientMessage, parseServerMessage } from '../src/netplay/protocol.ts'
+import { linkRole, newCode, parseClientMessage, parseServerMessage } from '../src/netplay/protocol.ts'
 import type { LinkMessage } from '../src/netplay/protocol.ts'
 import { build } from './carts.ts'
 
@@ -56,7 +56,11 @@ test('two linked consoles over a laggy, jittery network play the identical game'
 
 test('link messages are checked field by field and anything else is dropped', () => {
   assert.deepEqual(parseClientMessage('{"t":"in","f":4,"b":16,"evil":"<img src=x>"}'), { t: 'in', f: 4, b: 16 })
-  assert.deepEqual(parseClientMessage('{"t":"join","code":"abcd"}'), { t: 'join', code: 'ABCD' })
+  assert.deepEqual(parseClientMessage('{"t":"pong","x":1}'), { t: 'pong' })
+  assert.deepEqual(linkRole('?join=abcd'), { host: false, code: 'ABCD' })
+  assert.deepEqual(linkRole('?host'), { host: true })
+  for (const bad of ['', '?join=AB', '?join=ABCDE', '?join=AB1D', '?join=%3Cb%3E']) assert.equal(linkRole(bad), null, bad)
+  assert.match(newCode(), /^[A-HJ-NP-Z]{4}$/)
   for (const junk of ['', 'nope', '[]', 'null', '{"t":"in","f":-1,"b":1}', '{"t":"in","f":1,"b":256}',
     '{"t":"in","f":1.5,"b":1}', '{"t":"sum","f":"120","s":1}', '{"t":"join","code":"' + 'A'.repeat(99) + '"}', '{"t":"start","player":1}']) {
     assert.equal(parseClientMessage(junk), null, junk)

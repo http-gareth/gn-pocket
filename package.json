@@ -8,7 +8,8 @@
   },
   "scripts": {
     "start": "node --experimental-strip-types --disable-warning=ExperimentalWarning server/index.ts",
-    "test": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test \"test/*.test.ts\""
+    "test": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test \"test/*.test.ts\"",
+    "build": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/build.ts"
   },
   "description": "A Game Boy built from scratch: emulator, assembler and 10 original games.",
   "license": "MIT"

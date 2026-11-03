@@ -213,14 +213,13 @@ const endLink = (message: string) => {
   if (old.lock) menu()
 }
 
-const openLink = (first: ClientMessage) => {
+const openLink = (role: string) => {
   link?.ws.close()
-  const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/link`)
+  const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/link?${role}`)
   const current: Link = { ws, lock: null, roms: null, pending: null, previous: 0 }
   const send = (message: ClientMessage) => ws.send(JSON.stringify(message))
   link = current
   setRewind(false)
-  ws.addEventListener('open', () => send(first))
   ws.addEventListener('close', () => {
     if (link !== current) return
     endLink(current.lock ? 'LINK LOST' : 'NO LINK SERVER')
@@ -235,6 +234,7 @@ const openLink = (first: ClientMessage) => {
       linkCode.textContent = message.code
       showLink('Ask player 2 to open MENU, then JOIN with this code:', 'code')
     } else if (message.t === 'nope') {
+      endLink('NO GAME WITH THAT CODE')
       showLink('No game with that code. Check it and try again.', 'choose')
     } else if (message.t === 'start') {
       current.lock = new Lockstep(message.player, send, message.delay)
@@ -417,7 +417,7 @@ $<HTMLButtonElement>('#menu-close').addEventListener('click', () => dialog.close
 $<HTMLButtonElement>('#link-host').addEventListener('click', () => {
   showLink('Opening a game...', 'code')
   linkCode.textContent = '....'
-  openLink({ t: 'host' })
+  openLink('host')
 })
 $<HTMLFormElement>('#link-join').addEventListener('submit', e => {
   e.preventDefault()
@@ -425,7 +425,7 @@ $<HTMLFormElement>('#link-join').addEventListener('submit', e => {
   if (!/^[A-Z]{4}$/.test(code)) return showLink('The code is 4 letters.', 'choose')
   showLink('Joining...', 'code')
   linkCode.textContent = code
-  openLink({ t: 'join', code })
+  openLink(`join=${code}`)
 })
 unplug.addEventListener('click', () => {
   if (link) endLink('UNPLUGGED')

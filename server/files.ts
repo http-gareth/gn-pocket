@@ -30,15 +30,19 @@ const policy = (host: string) => Object.entries({
   'frame-ancestors': "'none'"
 }).map(([name, value]) => `${name} ${value}`).join('; ')
 
-const securityHeaders = (req: IncomingMessage): OutgoingHttpHeaders => ({
-  'content-security-policy': policy(req.headers.host ?? ''),
-  ...(process.env.TRUST_PROXY && req.headers['x-forwarded-proto'] === 'https' && { 'strict-transport-security': 'max-age=31536000' }),
+export const securityHeaders = (host: string, https: boolean): Record<string, string> => ({
+  'content-security-policy': policy(host),
+  ...(https && { 'strict-transport-security': 'max-age=31536000' }),
   'x-content-type-options': 'nosniff',
   'referrer-policy': 'no-referrer',
   'x-frame-options': 'DENY',
   'cross-origin-opener-policy': 'same-origin',
   'cross-origin-resource-policy': 'same-origin',
-  'permissions-policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
+  'permissions-policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=()'
+})
+
+const responseHeaders = (req: IncomingMessage): OutgoingHttpHeaders => ({
+  ...securityHeaders(req.headers.host ?? '', Boolean(process.env.TRUST_PROXY) && req.headers['x-forwarded-proto'] === 'https'),
   'cache-control': 'no-store'
 })
 
@@ -56,7 +60,7 @@ const resolve = (url = '/') => {
 }
 
 export const serveFile = async (req: IncomingMessage, res: ServerResponse) => {
-  const headers = securityHeaders(req)
+  const headers = responseHeaders(req)
   if (req.method !== 'GET' && req.method !== 'HEAD') return fail(res, { ...headers, allow: 'GET, HEAD' }, 405, 'method not allowed')
   let file: string | null
   try {
